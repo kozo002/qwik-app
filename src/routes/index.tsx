@@ -1,16 +1,60 @@
-import { component$ } from "@builder.io/qwik";
 import type { DocumentHead } from "@builder.io/qwik-city";
 
-export default component$(() => {
-  return (
-    <>
-      <h1>Hi 👋</h1>
+import { component$, $, useStore, useContextProvider, createContextId, useContext, Slot } from "@builder.io/qwik";
+export function createTab<T extends string[]>(tabKeys: T) {
+  type TabStore = { activeKey: T[number] }
+  const TabContext = createContextId<TabStore>('Tab_' + tabKeys.join('_'));
+
+  const Tab = component$(() => {
+    const tab = useContext(TabContext)
+    const handleClick = (key: T[number]) => {
+      return $(() => {
+        tab.activeKey = key
+      })
+    }
+    return (
       <div>
-        Can't wait to see what you build with qwik!
-        <br />
-        Happy coding.
+        <div>
+          {tabKeys.map((key) => <button type="button" key={key} onClick$={handleClick(key)}>{key}</button>)}
+        </div>
+        <div>
+          <Slot />
+        </div>
       </div>
-    </>
+    )
+  })
+
+  const TabContent = component$(({ tabKey }: { tabKey: T[number] }) => {
+    const tab = useContext(TabContext)
+    if (tab.activeKey !== tabKey) {
+      return
+    }
+    return <Slot />
+  })
+
+  return { Tab, TabContent, TabContext }
+}
+
+const { Tab, TabContent, TabContext } = createTab(['tab1', 'tab2', 'tab3'] as const)
+const { Tab: Tab2, TabContent: TabContent2, TabContext: TabContext2 } = createTab(['a', 'b', 'c'] as const)
+
+export default component$(() => {
+  useContextProvider(TabContext, useStore({ activeKey: 'tab1' }))
+  useContextProvider(TabContext2, useStore({ activeKey: 'a' }))
+
+  return (
+    <div>
+      <Tab>
+        <TabContent tabKey="tab1">111111111111111111111</TabContent>
+        <TabContent tabKey="tab2">222222222222222</TabContent>
+        <TabContent tabKey="tab3">33333333333333333333333</TabContent>
+      </Tab>
+      <Tab2>
+        <TabContent2 tabKey="a">aaaaaaaaa</TabContent2>
+        <TabContent2 tabKey="b">bbbbbb</TabContent2>
+        <TabContent2 tabKey="c">cccc</TabContent2>
+      </Tab2>
+    </div>
   );
 });
 
