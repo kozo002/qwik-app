@@ -1,17 +1,21 @@
 import type { DocumentHead } from "@builder.io/qwik-city";
 
 import { component$, $, useStore, useContextProvider, createContextId, useContext, Slot } from "@builder.io/qwik";
-export function createTab<T extends string[]>(tabKeys: T) {
+
+export function createTab<T extends string[]>(tabKeys: T, initial?:  T[number]) {
   type TabStore = { activeKey: T[number] }
   const TabContext = createContextId<TabStore>('Tab_' + tabKeys.join('_'));
 
   const Tab = component$(() => {
-    const tab = useContext(TabContext)
+    const store = useStore({ activeKey: initial ?? tabKeys[0] })
+    useContextProvider(TabContext, store)
+
     const handleClick = (key: T[number]) => {
       return $(() => {
-        tab.activeKey = key
+        store.activeKey = key
       })
     }
+
     return (
       <div>
         <div>
@@ -32,16 +36,13 @@ export function createTab<T extends string[]>(tabKeys: T) {
     return <Slot />
   })
 
-  return { Tab, TabContent, TabContext }
+  return { Tab, TabContent }
 }
 
-const { Tab, TabContent, TabContext } = createTab(['tab1', 'tab2', 'tab3'] as const)
-const { Tab: Tab2, TabContent: TabContent2, TabContext: TabContext2 } = createTab(['a', 'b', 'c'] as const)
+const { Tab, TabContent } = createTab(['tab1', 'tab2', 'tab3'] as const, 'tab2')
+const { Tab: Tab2, TabContent: TabContent2 } = createTab(['a', 'b', 'c'] as const)
 
 export default component$(() => {
-  useContextProvider(TabContext, useStore({ activeKey: 'tab1' }))
-  useContextProvider(TabContext2, useStore({ activeKey: 'a' }))
-
   return (
     <div>
       <Tab>
